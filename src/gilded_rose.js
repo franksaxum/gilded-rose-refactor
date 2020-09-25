@@ -7,10 +7,6 @@ class Item {
 }
 
 class Shop {
-  sellInRate = 1;
-  qualityRate = 1;
-  qualityValue = 40;
-  sellInValue = 10;
   maxQuality = 50;
   normalItemName = "Elixir of the Mongoose";
   legendaryItemName = "Sulfuras, Hand of Ragnaros";
@@ -46,14 +42,15 @@ class Shop {
 
       if (item.name === this.backstagePassesName) {
         item.quality =
-          this.handleBackstagePassesQuality(sellIn, quality) > 50
-            ? 50
+          this.handleBackstagePassesQuality(sellIn, quality) > maxQuality
+            ? maxQuality
             : this.handleBackstagePassesQuality(sellIn, quality);
         return item;
       }
 
       if (item.name === this.agedBrieName) {
-        item.quality = item.quality + 1 > 50 ? 50 : item.quality + 1;
+        item.quality =
+          item.quality + 1 > maxQuality ? maxQuality : item.quality + 1;
         return item;
       }
 
