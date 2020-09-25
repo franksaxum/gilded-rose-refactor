@@ -16,7 +16,6 @@ class Shop {
   legendaryItemName = "Sulfuras, Hand of Ragnaros";
   agedBrieName = "Aged Brie";
   backstagePassesName = "Backstage passes to a TAFKAL80ETC concert";
-  conjuredItemName = "Conjured Mana Cake";
 
   constructor(items = []) {
     this.items = items;
