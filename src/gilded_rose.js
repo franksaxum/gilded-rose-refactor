@@ -42,15 +42,17 @@ class Shop {
 
       if (item.name === this.backstagePassesName) {
         item.quality =
-          this.handleBackstagePassesQuality(sellIn, quality) > maxQuality
-            ? maxQuality
+          this.handleBackstagePassesQuality(sellIn, quality) > this.maxQuality
+            ? this.maxQuality
             : this.handleBackstagePassesQuality(sellIn, quality);
         return item;
       }
 
       if (item.name === this.agedBrieName) {
         item.quality =
-          item.quality + 1 > maxQuality ? maxQuality : item.quality + 1;
+          item.quality + 1 > this.maxQuality
+            ? this.maxQuality
+            : item.quality + 1;
         return item;
       }
 
