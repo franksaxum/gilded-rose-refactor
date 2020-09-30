@@ -1,15 +1,9 @@
-const { Shop, Item } = require("../src/gilded_rose");
+const { Names, Quality, Dates, Legendary, Deltas, Shop, Item } = require("../src/gilded_rose");
 
-const sellInRate = 1;
-const qualityRate = 1;
-const qualityValue = 40;
-const sellInValue = 10;
-const maxQuality = 50;
-const normalItemName = "Elixir of the Mongoose";
-const legendaryItemName = "Sulfuras, Hand of Ragnaros";
-const agedBrieName = "Aged Brie";
-const backstagePassesName = "Backstage passes to a TAFKAL80ETC concert";
-const conjuredItemName = "Conjured Mana Cake";
+const Defaults = {
+  SELL_IN: 10,
+  QUALITY: 40,
+};
 
 const createShop = (name, sellIn, quality) => {
   return new Shop([new Item(name, sellIn, quality)]);
@@ -17,103 +11,98 @@ const createShop = (name, sellIn, quality) => {
 
 describe("An item", () => {
   it("has its sellIn value descreased by 1 per day", () => {
-    const gildedRose = createShop(normalItemName, sellInValue, qualityValue);
+    const gildedRose = createShop(Names.REGULAR, Defaults.SELL_IN, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].sellIn).toBe(sellInValue - sellInRate);
+    expect(items[0].sellIn).toBe(Defaults.SELL_IN + Deltas.DEFAULT_DEGRADE);
   });
 
   it("has its quality value descreased by 1 per day", () => {
-    const gildedRose = createShop(normalItemName, sellInValue, qualityValue);
+    const gildedRose = createShop(Names.REGULAR, Defaults.SELL_IN, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(qualityValue - qualityRate);
+    expect(items[0].quality).toBe(Defaults.QUALITY + Deltas.DEFAULT_DEGRADE);
   });
 
-  it("has its quality degrate twice as fast once the sell by date has passed", () => {
-    const gildedRose = createShop(normalItemName, -1, qualityValue);
+  it("has its quality degrate twice as fast once the expiry date has passed", () => {
+    const gildedRose = createShop(Names.REGULAR, Dates.EXPIRY, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(qualityValue - 2 * qualityRate);
+    expect(items[0].quality).toBe(Defaults.QUALITY + 2 * Deltas.DEFAULT_DEGRADE);
   });
 
-  it(`never gets more quality than ${maxQuality}`, () => {
-    const qualityValue = 50;
-    const gildedRose = createShop(agedBrieName, -1, qualityValue);
-    const gildedRose2 = createShop(backstagePassesName, 5, qualityValue);
+  it(`never gets more quality than ${Quality.MAX}`, () => {
+    const gildedRose = createShop(Names.AGED_BRIE, Dates.EXPIRY, Quality.MAX);
+    const gildedRose2 = createShop(Names.BACKSTAGE_PASSES, 5, Quality.MAX);
     const items = gildedRose.updateQuality();
     const items2 = gildedRose2.updateQuality();
-    expect(items[0].quality).toBe(maxQuality);
-    expect(items2[0].quality).toBe(maxQuality);
+    expect(items[0].quality).toBe(Quality.MAX);
+    expect(items2[0].quality).toBe(Quality.MAX);
   });
 
   it("never gets a negative quality", () => {
-    const qualityValue = 0;
-    const gildedRose = createShop(normalItemName, sellInValue, qualityValue);
-    const gildedRose2 = createShop(conjuredItemName, sellInValue, qualityValue);
+    const gildedRose = createShop(Names.REGULAR, Defaults.SELL_IN, Quality.MIN);
+    const gildedRose2 = createShop(Names.CONJURED, Defaults.SELL_IN, Quality.MIN);
     const items = gildedRose.updateQuality();
     const items2 = gildedRose2.updateQuality();
-    expect(items[0].quality).not.toBeLessThan(0);
-    expect(items2[0].quality).not.toBeLessThan(0);
+    expect(items[0].quality).not.toBeLessThan(Quality.MIN);
+    expect(items2[0].quality).not.toBeLessThan(Quality.MIN);
   });
 });
 
 describe("Legendary item", () => {
-  const qualityValue = 80;
-  const sellInValue = -1;
   it("never has to be sold", () => {
-    const gildedRose = createShop(legendaryItemName, sellInValue, qualityValue);
+    const gildedRose = createShop(Names.LEGENDARY_ITEM, Defaults.SELL_IN, Legendary.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].sellIn).toBe(sellInValue);
+    expect(items[0].sellIn).toBe(Defaults.SELL_IN);
   });
 
-  it(`always has a quality of ${qualityValue}`, () => {
-    const gildedRose = createShop(legendaryItemName, sellInValue, qualityValue);
+  it(`always has a quality of ${Legendary.QUALITY}`, () => {
+    const gildedRose = createShop(Names.LEGENDARY_ITEM, Defaults.SELL_IN, Legendary.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(qualityValue);
+    expect(items[0].quality).toBe(Legendary.QUALITY);
   });
 });
 
-describe(`${agedBrieName}`, () => {
+describe(`${Names.AGED_BRIE}`, () => {
   it("increases in quality the older it gets", () => {
-    const gildedRose = createShop(agedBrieName, sellInValue, qualityValue);
+    const gildedRose = createShop(Names.AGED_BRIE, Defaults.SELL_IN, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(qualityValue + qualityRate);
+    expect(items[0].quality).toBe(Defaults.QUALITY + Deltas.DEFAULT_IMPROVE);
+  });
+
+  it("doubly increases in quality when expiry date is reached", () => {
+    const gildedRose = createShop(Names.AGED_BRIE, Dates.EXPIRY, Defaults.QUALITY);
+    const items = gildedRose.updateQuality();
+    expect(items[0].quality).toBe(Defaults.QUALITY + Deltas.DEFAULT_IMPROVE * 2);
   });
 });
 
-describe("Backstage passes", () => {
-  const sellInValue = 10;
-
+describe(`${Names.BACKSTAGE_PASSES}`, () => {
   it("quality increases by 2 when there are 10 days or less", () => {
-    const gildedRose = createShop(
-      backstagePassesName,
-      sellInValue,
-      qualityValue
-    );
+    const gildedRose = createShop(Names.BACKSTAGE_PASSES, Defaults.SELL_IN, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(qualityValue + 2 * qualityRate);
+    expect(items[0].quality).toBe(Defaults.QUALITY + 2 * Deltas.DEFAULT_IMPROVE);
   });
 
   it("quality increases by 3 when there are 5 days or less", () => {
-    const sellInValue = 5;
-    const gildedRose = createShop(
-      backstagePassesName,
-      sellInValue,
-      qualityValue
-    );
+    const sellIn = 5;
+    const gildedRose = createShop(Names.BACKSTAGE_PASSES, sellIn, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(qualityValue + 3 * qualityRate);
+    expect(items[0].quality).toBe(Defaults.QUALITY + 3 * Deltas.DEFAULT_IMPROVE);
   });
 
   it("quality drops to 0 after the concert", () => {
-    const gildedRose = createShop(backstagePassesName, -1, qualityValue);
+    const gildedRose = createShop(Names.BACKSTAGE_PASSES, Dates.EXPIRY, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(0);
+    expect(items[0].quality).toBe(Quality.MIN);
   });
 });
 
 describe("Conjured item ", () => {
   it("degrades twice as fast", () => {
-    const gildedRose = createShop(conjuredItemName, sellInValue, qualityValue);
+    const gildedRose = createShop(Names.CONJURED, Defaults.SELL_IN, Defaults.QUALITY);
+    const gildedRose2 = createShop(Names.CONJURED, Dates.EXPIRY, Defaults.QUALITY);
     const items = gildedRose.updateQuality();
-    expect(items[0].quality).toBe(qualityValue - 2 * qualityRate);
+    const items2 = gildedRose2.updateQuality();
+    expect(items[0].quality).toBe(Defaults.QUALITY + Deltas.CONJURED_DEGRADE);
+    expect(items2[0].quality).toBe(Defaults.QUALITY + Deltas.CONJURED_DEGRADE * 2);
   });
 });
