@@ -6,148 +6,123 @@ class Item {
   }
 }
 
-const Constants = {
-  MAX_QUALITY: 50,
-  MIN_QUALITY: 0,
-  PAST_SELL_DATE: -1,
+const Names = {
   REGULAR_ITEM: "Elixir of the Mongoose",
   LEGENDARY_ITEM: "Sulfuras, Hand of Ragnaros",
   AGED_BRIE: "Aged Brie",
   BACKSTAGE_PASSES: "Backstage passes to a TAFKAL80ETC concert",
-  DEFAULT_DEGRADATION_DELTA: 1,
+  CONJURED: "Conjured",
+};
+
+const Quality = {
+  MAX: 50,
+  MIN: 0,
+};
+
+const Constants = {
+  EXPIRY_DATE: -1,
+  DEFAULT_DEGRADATION_DELTA: -1,
+  DEFAULT_IMPROVEMENT_DELTA: 1,
   CONJURED_DEGRADATION_MULTIPLIER: 2,
+  LEGENDARY_QUALITY: 80,
 };
 
 class Shop {
-  static doubleDegradationDelta = Constants.DEFAULT_DEGRADATION_DELTA * 2;
-  static qualityImprovingItems = [
-    Constants.AGED_BRIE,
-    Constants.BACKSTAGE_PASSES,
-  ];
   constructor(items = []) {
     this.items = items;
   }
 
   updateItem(item) {
-    if (item.name === Constants.LEGENDARY_ITEM) {
+    if (item.name === Names.LEGENDARY_ITEM) {
       return new Item(item.name, item.sellIn, item.quality);
     }
-    const sellIn = this.updateSellIn(item.sellIn);
-    const itemWithNewSellIn = {
-      ...item,
-      sellIn,
-    };
-    const quality = this.updateItemQuality(itemWithNewSellIn);
+
+    const sellIn = this.updateSellIn(item);
+    const quality = this.updateItemQuality(item, sellIn);
 
     return new Item(item.name, sellIn, quality);
   }
 
-  updateItemQuality(item) {
-    const delta = this.isQualityImprovingItem(item)
-      ? this.getQualityImprovementDelta(item)
-      : -this.getDegradationDelta(item);
-    const newQuality = item.quality + delta;
-
-    if (this.qualityIsBiggerThanMax(newQuality)) {
-      return Constants.MAX_QUALITY;
-    }
-    if (this.qualityIsSmallerThanMin(newQuality)) {
-      return Constants.MIN_QUALITY;
-    }
-    return newQuality;
-  }
-
-  getDegradationDelta(item) {
-    const {
-      DEFAULT_DEGRADATION_DELTA,
-      CONJURED_DEGRADATION_MULTIPLIER,
-    } = Constants;
-    const isConjured = this.isConjuredItem(item.name);
-
-    if (this.isPastSellDate(item.sellIn)) {
-      if (isConjured) {
-        return Shop.doubleDegradationDelta * CONJURED_DEGRADATION_MULTIPLIER;
-      }
-      return Shop.doubleDegradationDelta;
-    }
-
-    return isConjured
-      ? DEFAULT_DEGRADATION_DELTA * CONJURED_DEGRADATION_MULTIPLIER
-      : DEFAULT_DEGRADATION_DELTA;
-  }
-
-  getQualityImprovementDelta(item) {
-    const {
-      AGED_BRIE,
-      PAST_SELL_DATE,
-      BACKSTAGE_PASSES,
-      DEFAULT_DEGRADATION_DELTA,
-    } = Constants;
-    const { name, sellIn, quality } = item;
-
-    if (name === AGED_BRIE) {
-      if (this.isPastSellDate(sellIn)) {
-        return Shop.doubleDegradationDelta;
-      }
-      return DEFAULT_DEGRADATION_DELTA;
-    }
-
-    if (name === BACKSTAGE_PASSES) {
-      if (sellIn > 10) {
-        return 1;
-      }
-
-      if (sellIn <= 10 && sellIn > 5) {
-        return 2;
-      }
-
-      if (sellIn <= 5 && sellIn > PAST_SELL_DATE) {
-        return 3;
-      }
-
-      if (this.isPastSellDate(sellIn)) {
-        return -quality;
-      }
+  updateItemQuality(item, sellIn) {
+    const name = this.getName(item.name);
+    switch (name) {
+      case Names.AGED_BRIE:
+        return this.updateBrieQuality(item.quality, sellIn);
+      case Names.BACKSTAGE_PASSES:
+        return this.updateBackstageQuality(item.quality, sellIn);
+      case Names.CONJURED:
+        return this.updateConjuredQuality(item.quality, sellIn);
+      default:
+        return this.updateRegularQuality(item.quality, sellIn);
     }
   }
 
-  isQualityImprovingItem(item) {
-    return Shop.qualityImprovingItems.includes(item.name);
+  updateBrieQuality(quality, sellIn) {
+    const newQuality = this.itemIsExpired(sellIn)
+      ? quality + Constants.DEFAULT_IMPROVEMENT_DELTA * 2
+      : quality + Constants.DEFAULT_IMPROVEMENT_DELTA;
+    return Math.min(newQuality, Quality.MAX);
   }
 
-  qualityIsBiggerThanMax(quality) {
-    if (quality > Constants.MAX_QUALITY) {
+  updateBackstageQuality(quality, sellIn) {
+    if (sellIn < 0) {
+      return 0;
+    }
+    if (sellIn <= 5) {
+      return Math.min(quality + 3, Quality.MAX);
+    }
+    if (sellIn <= 10) {
+      return Math.min(quality + 2, Quality.MAX);
+    }
+    return Math.min(quality + 1, Quality.MAX);
+  }
+
+  updateConjuredQuality(quality, sellIn) {
+    const newQuality = this.itemIsExpired(sellIn)
+      ? quality + Constants.DEFAULT_DEGRADATION_DELTA * 2 * Constants.CONJURED_DEGRADATION_MULTIPLIER
+      : quality + Constants.DEFAULT_DEGRADATION_DELTA * Constants.CONJURED_DEGRADATION_MULTIPLIER;
+    return Math.max(newQuality, Quality.MIN);
+  }
+
+  updateRegularQuality(quality, sellIn) {
+    const newQuality = this.itemIsExpired(sellIn)
+      ? quality + Constants.DEFAULT_DEGRADATION_DELTA * 2
+      : quality + Constants.DEFAULT_DEGRADATION_DELTA;
+    return Math.max(newQuality, Quality.MIN);
+  }
+
+  itemIsExpired(sellIn) {
+    if (sellIn <= Constants.EXPIRY_DATE) {
       return true;
     }
-    false;
+    return false;
   }
 
-  qualityIsSmallerThanMin(quality) {
-    if (quality < Constants.MIN_QUALITY) {
-      return true;
+  getName(name) {
+    if (name.startsWith(Names.CONJURED)) {
+      return Names.CONJURED;
     }
-    false;
+    return name;
   }
 
   isPastSellDate(sellIn) {
     return sellIn <= Constants.PAST_SELL_DATE;
   }
 
-  isConjuredItem(name) {
-    if (name.startsWith("Conjured")) {
-      return true;
+  updateSellIn(item) {
+    switch (item.name) {
+      case Constants.LEGENDARY_ITEM:
+        return item.sellIn;
+      default:
+        return item.sellIn - 1;
     }
-    return false;
-  }
-
-  updateSellIn(sellIn) {
-    return sellIn - 1;
   }
 
   updateQuality() {
-    return this.items.map((item) => {
+    this.items = this.items.map((item) => {
       return this.updateItem(item);
     });
+    return this.items;
   }
 }
 
