@@ -33,7 +33,11 @@ class Shop {
       return new Item(item.name, item.sellIn, item.quality);
     }
     const sellIn = this.updateSellIn(item.sellIn);
-    const quality = this.updateItemQuality(item);
+    const itemWithNewSellIn = {
+      ...item,
+      sellIn,
+    };
+    const quality = this.updateItemQuality(itemWithNewSellIn);
 
     return new Item(item.name, sellIn, quality);
   }
@@ -60,7 +64,7 @@ class Shop {
     } = Constants;
     const isConjured = this.isConjuredItem(item.name);
 
-    if (this.isPastSellDate(item)) {
+    if (this.isPastSellDate(item.sellIn)) {
       if (isConjured) {
         return Shop.doubleDegradationDelta * CONJURED_DEGRADATION_MULTIPLIER;
       }
@@ -80,10 +84,10 @@ class Shop {
       BACKSTAGE_PASSES,
       DEFAULT_DEGRADATION_DELTA,
     } = Constants;
-    const { name, sellIn } = item;
+    const { name, sellIn, quality } = item;
 
     if (name === AGED_BRIE) {
-      if (this.isPastSellDate(item)) {
+      if (this.isPastSellDate(sellIn)) {
         return Shop.doubleDegradationDelta;
       }
       return DEFAULT_DEGRADATION_DELTA;
@@ -103,7 +107,8 @@ class Shop {
       }
 
       if (this.isPastSellDate(sellIn)) {
-        return MIN_QUALITY;
+        console.log("this.isPastSellDate(sellIn)", item, MIN_QUALITY);
+        return -quality;
       }
     }
   }
