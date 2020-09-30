@@ -7,6 +7,7 @@ class Item {
 }
 
 const Names = {
+  REGULAR: "Elixir of the Mongoose",
   LEGENDARY_ITEM: "Sulfuras, Hand of Ragnaros",
   AGED_BRIE: "Aged Brie",
   BACKSTAGE_PASSES: "Backstage passes to a TAFKAL80ETC concert",
@@ -18,12 +19,18 @@ const Quality = {
   MIN: 0,
 };
 
-const Constants = {
-  EXPIRY_DATE: -1,
-  DEFAULT_DEGRADATION_DELTA: -1,
-  DEFAULT_IMPROVEMENT_DELTA: 1,
-  CONJURED_DEGRADATION_MULTIPLIER: 2,
-  LEGENDARY_QUALITY: 80,
+const Dates = {
+  EXPIRY: -1,
+};
+
+const Legendary = {
+  QUALITY: 80,
+};
+
+const Deltas = {
+  DEFAULT_DEGRADE: -1,
+  DEFAULT_IMPROVE: 1,
+  CONJURED_DEGRADE: 2,
 };
 
 class Shop {
@@ -55,13 +62,13 @@ class Shop {
   }
 
   updateLegendaryQuality() {
-    return Constants.LEGENDARY_QUALITY;
+    return Legendary.QUALITY;
   }
 
   updateBrieQuality(quality, sellIn) {
     const newQuality = this.itemIsExpired(sellIn)
-      ? quality + Constants.DEFAULT_IMPROVEMENT_DELTA * 2
-      : quality + Constants.DEFAULT_IMPROVEMENT_DELTA;
+      ? quality + Deltas.DEFAULT_IMPROVE * 2
+      : quality + Deltas.DEFAULT_IMPROVE;
     return Math.min(newQuality, Quality.MAX);
   }
 
@@ -80,20 +87,20 @@ class Shop {
 
   updateConjuredQuality(quality, sellIn) {
     const newQuality = this.itemIsExpired(sellIn)
-      ? quality + Constants.DEFAULT_DEGRADATION_DELTA * 2 * Constants.CONJURED_DEGRADATION_MULTIPLIER
-      : quality + Constants.DEFAULT_DEGRADATION_DELTA * Constants.CONJURED_DEGRADATION_MULTIPLIER;
+      ? quality + Deltas.CONJURED_DEGRADE * 2
+      : quality + Deltas.CONJURED_DEGRADE;
     return Math.max(newQuality, Quality.MIN);
   }
 
   updateRegularQuality(quality, sellIn) {
     const newQuality = this.itemIsExpired(sellIn)
-      ? quality + Constants.DEFAULT_DEGRADATION_DELTA * 2
-      : quality + Constants.DEFAULT_DEGRADATION_DELTA;
+      ? quality + Deltas.DEFAULT_DEGRADE * 2
+      : quality + Deltas.DEFAULT_DEGRADE;
     return Math.max(newQuality, Quality.MIN);
   }
 
   itemIsExpired(sellIn) {
-    if (sellIn <= Constants.EXPIRY_DATE) {
+    if (sellIn <= Dates.EXPIRY) {
       return true;
     }
     return false;
@@ -107,7 +114,7 @@ class Shop {
   }
 
   isPastSellDate(sellIn) {
-    return sellIn <= Constants.PAST_SELL_DATE;
+    return sellIn <= Dates.EXPIRY;
   }
 
   updateSellIn(item) {
@@ -130,4 +137,9 @@ class Shop {
 module.exports = {
   Item,
   Shop,
+  Names,
+  Quality,
+  Dates,
+  Legendary,
+  Deltas,
 };
