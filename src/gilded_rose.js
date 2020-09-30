@@ -32,10 +32,6 @@ class Shop {
   }
 
   updateItem(item) {
-    if (item.name === Names.LEGENDARY_ITEM) {
-      return new Item(item.name, item.sellIn, item.quality);
-    }
-
     const sellIn = this.updateSellIn(item);
     const quality = this.updateItemQuality(item, sellIn);
 
@@ -45,6 +41,8 @@ class Shop {
   updateItemQuality(item, sellIn) {
     const name = this.getName(item.name);
     switch (name) {
+      case Names.LEGENDARY_ITEM:
+        return this.updateLegendaryQuality();
       case Names.AGED_BRIE:
         return this.updateBrieQuality(item.quality, sellIn);
       case Names.BACKSTAGE_PASSES:
@@ -54,6 +52,10 @@ class Shop {
       default:
         return this.updateRegularQuality(item.quality, sellIn);
     }
+  }
+
+  updateLegendaryQuality() {
+    return Constants.LEGENDARY_QUALITY;
   }
 
   updateBrieQuality(quality, sellIn) {
@@ -110,7 +112,7 @@ class Shop {
 
   updateSellIn(item) {
     switch (item.name) {
-      case Constants.LEGENDARY_ITEM:
+      case Names.LEGENDARY_ITEM:
         return item.sellIn;
       default:
         return item.sellIn - 1;
