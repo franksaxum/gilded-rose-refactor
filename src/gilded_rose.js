@@ -79,7 +79,6 @@ class Shop {
   getQualityImprovementDelta(item) {
     const {
       AGED_BRIE,
-      MIN_QUALITY,
       PAST_SELL_DATE,
       BACKSTAGE_PASSES,
       DEFAULT_DEGRADATION_DELTA,
@@ -107,7 +106,6 @@ class Shop {
       }
 
       if (this.isPastSellDate(sellIn)) {
-        console.log("this.isPastSellDate(sellIn)", item, MIN_QUALITY);
         return -quality;
       }
     }
