@@ -6,63 +6,144 @@ class Item {
   }
 }
 
-class Shop {
-  maxQuality = 50;
-  normalItemName = "Elixir of the Mongoose";
-  legendaryItemName = "Sulfuras, Hand of Ragnaros";
-  agedBrieName = "Aged Brie";
-  backstagePassesName = "Backstage passes to a TAFKAL80ETC concert";
+const Constants = {
+  MAX_QUALITY: 50,
+  MIN_QUALITY: 0,
+  PAST_SELL_DATE: -1,
+  REGULAR_ITEM: "Elixir of the Mongoose",
+  LEGENDARY_ITEM: "Sulfuras, Hand of Ragnaros",
+  AGED_BRIE: "Aged Brie",
+  BACKSTAGE_PASSES: "Backstage passes to a TAFKAL80ETC concert",
+  DEFAULT_DEGRADATION_DELTA: 1,
+  CONJURED_DEGRADATION_MULTIPLIER: 2,
+};
 
+class Shop {
+  static doubleDegradationDelta = Constants.DEFAULT_DEGRADATION_DELTA * 2;
+  static qualityImprovingItems = [
+    Constants.AGED_BRIE,
+    Constants.BACKSTAGE_PASSES,
+  ];
   constructor(items = []) {
     this.items = items;
   }
 
-  handleBackstagePassesQuality(sellIn, quality) {
-    if (sellIn < 0) {
-      return 0;
+  updateItem(item) {
+    if (item.name === Constants.LEGENDARY_ITEM) {
+      return new Item(item.name, item.sellIn, item.quality);
     }
-    if (sellIn <= 5) {
-      return quality + 3;
+    const sellIn = this.updateSellIn(item.sellIn);
+    const quality = this.updateItemQuality(item);
+
+    return new Item(item.name, sellIn, quality);
+  }
+
+  updateItemQuality(item) {
+    const delta = this.isQualityImprovingItem(item)
+      ? this.getQualityImprovementDelta(item)
+      : -this.getDegradationDelta(item);
+    const newQuality = item.quality + delta;
+
+    if (this.qualityIsBiggerThanMax(newQuality)) {
+      return Constants.MAX_QUALITY;
     }
-    if (sellIn <= 10) {
-      return quality + 2;
+    if (this.qualityIsSmallerThanMin(newQuality)) {
+      return Constants.MIN_QUALITY;
     }
-    return quality + 1;
+    return newQuality;
+  }
+
+  getDegradationDelta(item) {
+    const {
+      DEFAULT_DEGRADATION_DELTA,
+      CONJURED_DEGRADATION_MULTIPLIER,
+    } = Constants;
+    const isConjured = this.isConjuredItem(item.name);
+
+    if (this.isPastSellDate(item)) {
+      if (isConjured) {
+        return Shop.doubleDegradationDelta * CONJURED_DEGRADATION_MULTIPLIER;
+      }
+      return Shop.doubleDegradationDelta;
+    }
+
+    return isConjured
+      ? DEFAULT_DEGRADATION_DELTA * CONJURED_DEGRADATION_MULTIPLIER
+      : DEFAULT_DEGRADATION_DELTA;
+  }
+
+  getQualityImprovementDelta(item) {
+    const {
+      AGED_BRIE,
+      MIN_QUALITY,
+      PAST_SELL_DATE,
+      BACKSTAGE_PASSES,
+      DEFAULT_DEGRADATION_DELTA,
+    } = Constants;
+    const { name, sellIn } = item;
+
+    if (name === AGED_BRIE) {
+      if (this.isPastSellDate(item)) {
+        return Shop.doubleDegradationDelta;
+      }
+      return DEFAULT_DEGRADATION_DELTA;
+    }
+
+    if (name === BACKSTAGE_PASSES) {
+      if (sellIn > 10) {
+        return 1;
+      }
+
+      if (sellIn <= 10 && sellIn > 5) {
+        return 2;
+      }
+
+      if (sellIn <= 5 && sellIn > PAST_SELL_DATE) {
+        return 3;
+      }
+
+      if (this.isPastSellDate(sellIn)) {
+        return MIN_QUALITY;
+      }
+    }
+  }
+
+  isQualityImprovingItem(item) {
+    return Shop.qualityImprovingItems.includes(item.name);
+  }
+
+  qualityIsBiggerThanMax(quality) {
+    if (quality > Constants.MAX_QUALITY) {
+      return true;
+    }
+    false;
+  }
+
+  qualityIsSmallerThanMin(quality) {
+    if (quality < Constants.MIN_QUALITY) {
+      return true;
+    }
+    false;
+  }
+
+  isPastSellDate(sellIn) {
+    return sellIn <= Constants.PAST_SELL_DATE;
+  }
+
+  isConjuredItem(name) {
+    if (name.startsWith("Conjured")) {
+      return true;
+    }
+    return false;
+  }
+
+  updateSellIn(sellIn) {
+    return sellIn - 1;
   }
 
   updateQuality() {
     return this.items.map((item) => {
-      const { sellIn, quality } = item;
-
-      if (item.name === this.legendaryItemName) {
-        return item;
-      }
-
-      item.sellIn = item.sellIn - 1;
-
-      if (item.name === this.backstagePassesName) {
-        item.quality =
-          this.handleBackstagePassesQuality(sellIn, quality) > this.maxQuality
-            ? this.maxQuality
-            : this.handleBackstagePassesQuality(sellIn, quality);
-        return item;
-      }
-
-      if (item.name === this.agedBrieName) {
-        item.quality =
-          item.quality + 1 > this.maxQuality
-            ? this.maxQuality
-            : item.quality + 1;
-        return item;
-      }
-
-      if (item.sellIn < 0 || item.name.startsWith("Conjured")) {
-        item.quality = item.quality - 2 < 0 ? item.quality : item.quality - 2;
-        return item;
-      }
-
-      item.quality = item.quality - 1 < 0 ? item.quality : item.quality - 1;
-      return item;
+      return this.updateItem(item);
     });
   }
 }
