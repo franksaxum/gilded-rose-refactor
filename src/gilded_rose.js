@@ -7,7 +7,6 @@ class Item {
 }
 
 const Names = {
-  REGULAR_ITEM: "Elixir of the Mongoose",
   LEGENDARY_ITEM: "Sulfuras, Hand of Ragnaros",
   AGED_BRIE: "Aged Brie",
   BACKSTAGE_PASSES: "Backstage passes to a TAFKAL80ETC concert",
