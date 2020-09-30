@@ -7,7 +7,7 @@ This is the Gilded Rose kata in JavaScript with Jest
 Install dependencies
 
 ```sh
-npm install
+yarn
 ```
 
 ## Running tests
@@ -15,17 +15,17 @@ npm install
 To run all tests
 
 ```sh
-npm test
+yarn test
 ```
 
 To run all tests in watch mode
 
 ```sh
-npm run test:watch
+yarn test:watch
 ```
 
 To generate test coverage report
 
 ```sh
-npm run test:coverage
+yarn test:coverage
 ```
